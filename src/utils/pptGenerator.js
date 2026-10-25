@@ -19,7 +19,6 @@ function splitBulletItems(items, slideFormat) {
 
     items.forEach((rawItem) => {
 
-        // Forzar salto de página
         if (rawItem?.pageBreak) {
             if (current.length) slides.push({ items: current, hideTitle: currentHideTitle });
             current = [];
@@ -93,6 +92,12 @@ export async function generatePPTX({
     sectionPointLimit = 5,
     useBullets = false,
     startNumber = 1,
+    headingColor = "#000000",
+    titleColor = "#000000",
+    romanColorMode = "theme",
+    customRomanColor = "#000000",
+    markerColorMode = "theme",
+    customMarkerColor = "#000000",
 }) {
     const pptx = new PptxGenJS();
 
@@ -121,7 +126,6 @@ export async function generatePPTX({
     pptx.subject = sermon.title;
     pptx.title = sermon.title;
     pptx.company = "ChatGPT";
-
     const THEMES = {
         wine: {
             dark: "7B1F1F",
@@ -169,7 +173,6 @@ export async function generatePPTX({
     const selectedTheme = slideDesign === "formal"
         ? {
             dark: "334155",
-            accent: "64748B",
             redText: "334155",
         }
         : themeColor.startsWith("#")
@@ -182,7 +185,19 @@ export async function generatePPTX({
 
     const isModern = slideDesign === "modern";
     const textColor = toPptxColor(getContrastText(slideBackground));
+    const titleHeadingColor = toPptxColor(headingColor);
+    const coverTitleColor = toPptxColor(titleColor);
     const accentColor = toPptxColor(getReadableColor(slideBackground, `#${selectedTheme.redText}`));
+    const romanMarkerColor = romanColorMode === "custom"
+        ? toPptxColor(customRomanColor)
+        : romanColorMode === "black"
+            ? "000000"
+            : accentColor;
+    const listMarkerColor = markerColorMode === "custom"
+        ? toPptxColor(customMarkerColor)
+        : markerColorMode === "black"
+            ? "000000"
+            : accentColor;
     const mutedColor = toPptxColor(getReadableColor(slideBackground, textColor === "FFFFFF" ? "#E5E7EB" : "#666666"));
 
     const typography = {
@@ -200,10 +215,14 @@ export async function generatePPTX({
         text: textColor,
         gray: mutedColor,
         accent: accentColor,
-        redText: accentColor,
+        title: coverTitleColor,
+        heading: titleHeadingColor,
+        roman: romanMarkerColor,
+        marker: listMarkerColor,
     };
 
     function addFooter(slide, text) {
+        const normalizedText = text.replace(/\s*\n\s*/g, " ");
         slide.addShape("rect", {
             x: 0,
             y: SLIDE_H - 0.55,
@@ -217,7 +236,7 @@ export async function generatePPTX({
             },
         });
 
-        slide.addText(text.toUpperCase(), {
+        slide.addText(normalizedText.toUpperCase(), {
             x: 0,
             y: SLIDE_H - 0.55,
             w: SLIDE_W,
@@ -282,18 +301,20 @@ export async function generatePPTX({
         }
 
         // título
+        const coverTitle = sermon.title || "TÍTULO";
+        const coverTitleHeight = Math.max(1, coverTitle.split("\n").length * 1.15);
         slide.addText(
-            sermon.title || "TÍTULO",
+            coverTitle,
             {
                 x: isModern ? 1.0 : 1.2,
-                y: 2.1,
+                y: 2.1 - (coverTitleHeight - 1) / 2,
                 w: SLIDE_W - 2.2,
-                h: 1,
+                h: coverTitleHeight,
                 fontFace: typography.coverTitle.fontFace,
                 fontSize: typography.coverTitle.fontSize,
                 bold: true,
                 align: "center",
-                color: COLORS.text,
+                color: COLORS.title,
                 valign: "mid",
             }
         );
@@ -347,7 +368,7 @@ export async function generatePPTX({
                         fontFace: typography.heading.fontFace,
                         fontSize: typography.heading.fontSize,
                         bold: true,
-                        color: COLORS.text,
+                        color: COLORS.heading,
                     }
                 );
 
@@ -383,7 +404,7 @@ export async function generatePPTX({
                         text: "• ",
                         options: {
                             bold: true,
-                            color: COLORS.accent,
+                            color: COLORS.marker,
                         },
                     }
                     : typeof item.number === "number"
@@ -391,7 +412,7 @@ export async function generatePPTX({
                             text: `${item.number}. `,
                             options: {
                                 bold: true,
-                                color: COLORS.accent,
+                                color: COLORS.marker,
                             },
                         }
                         : null;
@@ -484,13 +505,13 @@ export async function generatePPTX({
                             text: `${section.num}. `,
                             options: {
                                 bold: true,
-                                color: COLORS.accent,
+                                color: COLORS.roman,
                             },
                         },
                         {
                             text: section.title + (section.ref ? ` (${section.ref})` : ""),
                             options: {
-                                color: COLORS.text,
+                                color: COLORS.heading,
                             },
                         },
                     ]
@@ -498,7 +519,7 @@ export async function generatePPTX({
                         {
                             text: section.title + (section.ref ? ` (${section.ref})` : ""),
                             options: {
-                                color: COLORS.text,
+                                color: COLORS.heading,
                                 bold: true,
                             },
                         },
@@ -658,7 +679,7 @@ export async function generatePPTX({
 
                         bold: true,
 
-                        color: COLORS.redText,
+                            color: COLORS.marker,
 
                         margin: 0,
                     }
@@ -750,7 +771,7 @@ export async function generatePPTX({
                         fontFace: typography.heading.fontFace,
                         fontSize: typography.heading.fontSize,
                         bold: true,
-                        color: COLORS.text,
+                        color: COLORS.heading,
                     }
                 );
 
@@ -785,7 +806,7 @@ export async function generatePPTX({
                         text: "• ",
                         options: {
                             bold: true,
-                            color: COLORS.accent,
+                            color: COLORS.marker,
                         },
                     }
                     : typeof item.number === "number"
@@ -793,7 +814,7 @@ export async function generatePPTX({
                             text: `${item.number}. `,
                             options: {
                                 bold: true,
-                                color: COLORS.accent,
+                                color: COLORS.marker,
                             },
                         }
                         : null;

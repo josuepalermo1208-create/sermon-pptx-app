@@ -71,7 +71,13 @@ V 2.1.0
 
 - Definir nombre "Sermon Slider"
 
--Agregar temas de color negro y cafe
+- Agregar temas de color negro y cafe
+
+- ahora que tambien se permita hacer salto de linea con [s] en el titulo
+
+- agrega un menu a configuracion que permita cambiar el color del titulo y de los encabezados , con las opciones de: color predeterminado (negro), color del tema y personalizado
+
+- modifica el input de "puntos de seccion" para que cuando se cambie de tamaño de diapositiva, se actualice al valor predeterminado que tiene esta
 
 // REVISION DEL CODIGO //
 

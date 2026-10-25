@@ -65,6 +65,8 @@ export function parseSermon(raw) {
         result.title = line;
       }
 
+      result.title = result.title.replace(/\s*\[s\]\s*/gi, "\n").trim();
+
       mode = "post-title";
       continue;
     }

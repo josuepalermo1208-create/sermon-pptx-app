@@ -15,6 +15,16 @@ const SLIDE_BACKGROUND_PRESETS = [
   { name: "Carbón", value: "#262626" },
 ];
 
+const THEME_TITLE_COLORS = {
+  wine: "#7B1F1F",
+  blue: "#1E3A8A",
+  green: "#166534",
+  purple: "#6B21A8",
+  gray: "#6B7280",
+  black: "#000000",
+  brown: "#64483C",
+};
+
 // Default font settings for different slide elements
 const DEFAULT_FONT_SETTINGS = {
   coverTitle: { fontFace: "Calibri", fontSize: 80 },
@@ -46,6 +56,14 @@ function App() {
   );
   const [themeColor, setThemeColor] = useState("wine");
   const [customThemeColor, setCustomThemeColor] = useState("#8B1A1A");
+  const [headingColorMode, setHeadingColorMode] = useState("default");
+  const [customHeadingColor, setCustomHeadingColor] = useState("#000000");
+  const [titleColorMode, setTitleColorMode] = useState("default");
+  const [customTitleColor, setCustomTitleColor] = useState("#000000");
+  const [romanColorMode, setRomanColorMode] = useState("theme");
+  const [customRomanColor, setCustomRomanColor] = useState("#7B1F1F");
+  const [markerColorMode, setMarkerColorMode] = useState("theme");
+  const [customMarkerColor, setCustomMarkerColor] = useState("#7B1F1F");
   const [slideDesign, setSlideDesign] = useState("classic");
   const [slideBackground, setSlideBackground] = useState("#FFFFFF");
   const [fontSettings, setFontSettings] = useState(DEFAULT_FONT_SETTINGS);
@@ -209,6 +227,24 @@ function App() {
   };
 
   const sermon = parseSermon(inputText);
+  const titleColor = titleColorMode === "custom"
+    ? customTitleColor
+    : titleColorMode === "theme"
+      ? slideDesign === "formal"
+        ? "#334155"
+        : themeColor.startsWith("#")
+          ? themeColor
+          : THEME_TITLE_COLORS[themeColor] || THEME_TITLE_COLORS.wine
+      : "#000000";
+  const headingColor = headingColorMode === "custom"
+    ? customHeadingColor
+    : headingColorMode === "theme"
+      ? slideDesign === "formal"
+        ? "#334155"
+        : themeColor.startsWith("#")
+          ? themeColor
+          : THEME_TITLE_COLORS[themeColor] || THEME_TITLE_COLORS.wine
+      : "#000000";
 
   const autoFileName =
     sermon.title
@@ -217,8 +253,10 @@ function App() {
           /[\\/:*?"<>|]/g,
           ""
         )
+        .replace(/\s+/g, " ")
         .trim()
       : "presentacion";
+  const sermonTitleForFooter = sermon.title.replace(/\s*\n\s*/g, " ").trim();
 
   const slides = [];
 
@@ -438,10 +476,16 @@ function App() {
         includeConclusion,
         slideFormat,
         themeColor,
+        titleColor,
+        headingColor,
         slideDesign,
         slideBackground,
         fontSettings,
         sectionPointLimit,
+        romanColorMode,
+        customRomanColor,
+        markerColorMode,
+        customMarkerColor,
       });
     } catch (error) {
       console.error(error);
@@ -706,11 +750,11 @@ function App() {
               <select
                 className="form-control"
                 value={slideFormat}
-                onChange={(e) =>
-                  setSlideFormat(
-                    e.target.value
-                  )
-                }
+                onChange={(event) => {
+                  const nextFormat = event.target.value;
+                  setSlideFormat(nextFormat);
+                  setSectionPointLimit(DEFAULT_SECTION_POINT_LIMITS[nextFormat]);
+                }}
               >
                 <option value="standard">
                   Estándar (4:3)
@@ -1002,6 +1046,110 @@ function App() {
               </div>
             )}
 
+            <div className="settings-card title-color-card">
+              <h3 className="card-title">Color del título</h3>
+              <select
+                className="form-control"
+                value={titleColorMode}
+                onChange={(event) => setTitleColorMode(event.target.value)}
+                aria-label="Color del título"
+              >
+                <option value="default">Predeterminado (negro)</option>
+                <option value="theme">Color del tema</option>
+                <option value="custom">Personalizado</option>
+              </select>
+              {titleColorMode === "custom" && (
+                <label className="heading-color-picker">
+                  <span>Color personalizado</span>
+                  <input
+                    type="color"
+                    value={customTitleColor}
+                    onChange={(event) => setCustomTitleColor(event.target.value.toUpperCase())}
+                    aria-label="Elegir color personalizado para título"
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="settings-card heading-color-card">
+              <h3 className="card-title">Color de los encabezados</h3>
+              <select
+                className="form-control"
+                value={headingColorMode}
+                onChange={(event) => setHeadingColorMode(event.target.value)}
+                aria-label="Color de los encabezados"
+              >
+                <option value="default">Predeterminado (negro)</option>
+                <option value="theme">Color del tema</option>
+                <option value="custom">Personalizado</option>
+              </select>
+              {headingColorMode === "custom" && (
+                <label className="heading-color-picker">
+                  <span>Color personalizado</span>
+                  <input
+                    type="color"
+                    value={customHeadingColor}
+                    onChange={(event) => setCustomHeadingColor(event.target.value.toUpperCase())}
+                    aria-label="Elegir color personalizado para encabezados"
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="settings-card marker-color-card">
+              <h3 className="card-title">Color de números y marcadores</h3>
+
+              <div className="marker-color-setting">
+                <label className="marker-color-label" htmlFor="roman-color-mode">Números romanos</label>
+                <select
+                  id="roman-color-mode"
+                  className="form-control"
+                  value={romanColorMode}
+                  onChange={(event) => setRomanColorMode(event.target.value)}
+                >
+                  <option value="theme">Color del tema</option>
+                  <option value="black">Negro</option>
+                  <option value="custom">Personalizado</option>
+                </select>
+                {romanColorMode === "custom" && (
+                  <label className="heading-color-picker">
+                    <span>Color personalizado</span>
+                    <input
+                      type="color"
+                      value={customRomanColor}
+                      onChange={(event) => setCustomRomanColor(event.target.value.toUpperCase())}
+                      aria-label="Elegir color para números romanos"
+                    />
+                  </label>
+                )}
+              </div>
+
+              <div className="marker-color-setting">
+                <label className="marker-color-label" htmlFor="marker-color-mode">Numeraciones y viñetas</label>
+                <select
+                  id="marker-color-mode"
+                  className="form-control"
+                  value={markerColorMode}
+                  onChange={(event) => setMarkerColorMode(event.target.value)}
+                >
+                  <option value="theme">Color del tema</option>
+                  <option value="black">Negro</option>
+                  <option value="custom">Personalizado</option>
+                </select>
+                {markerColorMode === "custom" && (
+                  <label className="heading-color-picker">
+                    <span>Color personalizado</span>
+                    <input
+                      type="color"
+                      value={customMarkerColor}
+                      onChange={(event) => setCustomMarkerColor(event.target.value.toUpperCase())}
+                      aria-label="Elegir color para numeraciones y viñetas"
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
             <div className="settings-card slide-background-card">
               <h3 className="card-title">Fondo de diapositiva</h3>
               <div className="background-grid">
@@ -1114,6 +1262,12 @@ function App() {
                 isCover
                 title={sermon.title || "TÍTULO"}
                 subtitle={sermon.reference}
+                titleColor={titleColor}
+                headingColor={headingColor}
+                romanColorMode={romanColorMode}
+                customRomanColor={customRomanColor}
+                markerColorMode={markerColorMode}
+                customMarkerColor={customMarkerColor}
                 footer={footerMsg}
                 themeColor={themeColor}
                 slideBackground={slideBackground}
@@ -1142,10 +1296,15 @@ function App() {
                 >
                   <SlidePreview
                     title={chunk.hideTitle ? "" : "INTRODUCCIÓN"}
+                    headingColor={headingColor}
+                    romanColorMode={romanColorMode}
+                    customRomanColor={customRomanColor}
+                    markerColorMode={markerColorMode}
+                    customMarkerColor={customMarkerColor}
                     items={chunk.items}
                     hideHeader={chunk.hideTitle}
                     useBullets={true}
-                    footer={`TEMA: ${sermon.title}`}
+                    footer={`TEMA: ${sermonTitleForFooter}`}
                     themeColor={themeColor}
                     slideBackground={slideBackground}
                     slideFormat={slideFormat}
@@ -1182,10 +1341,15 @@ function App() {
                         ? ` (${section.ref})`
                         : ""
                         }`}
+                      headingColor={headingColor}
+                      romanColorMode={romanColorMode}
+                      customRomanColor={customRomanColor}
+                      markerColorMode={markerColorMode}
+                      customMarkerColor={customMarkerColor}
                       hideHeader={chunk.hideTitle}
                       items={chunkItems}
                       startNumber={chunkStartNumber}
-                      footer={`TEMA: ${sermon.title}`}
+                      footer={`TEMA: ${sermonTitleForFooter}`}
                       themeColor={themeColor}
                       slideBackground={slideBackground}
                       slideFormat={slideFormat}
@@ -1226,10 +1390,15 @@ function App() {
                 >
                   <SlidePreview
                     title={chunk.hideTitle ? "" : "CONCLUSIÓN"}
+                    headingColor={headingColor}
+                    romanColorMode={romanColorMode}
+                    customRomanColor={customRomanColor}
+                    markerColorMode={markerColorMode}
+                    customMarkerColor={customMarkerColor}
                     items={chunk.items}
                     hideHeader={chunk.hideTitle}
                     useBullets={true}
-                    footer={`TEMA: ${sermon.title}`}
+                    footer={`TEMA: ${sermonTitleForFooter}`}
                     themeColor={themeColor}
                     slideBackground={slideBackground}
                     slideFormat={slideFormat}
@@ -1433,7 +1602,7 @@ function App() {
 
               <section className="manual-section">
                 <h3>3. Formato del contenido</h3>
-                <p>La primera línea en mayúsculas se toma como título. Puedes añadir una referencia después.</p>
+                <p>La primera línea en mayúsculas se toma como título. Puedes añadir una referencia después y usar [s] para dividir el título en varias líneas.</p>
                 <pre>{`TEMA DEL SERMÓN
 Juan 3:16`}</pre>
                 <p>En introducción y conclusión, usa guiones para crear viñetas. También puedes usar números e incisos.</p>
@@ -1535,7 +1704,7 @@ I.TEXTO DEL ENCABEZADO`}</pre>
               <section className="manual-section">
                 <h3>Acerca de la aplicación</h3>
                 <p><strong>Nombre:</strong> Sermon Slider</p>
-                <p><strong>Versión:</strong> 2.1.1</p>
+                <p><strong>Versión:</strong> 2.1.2</p>
                 <p><strong>Descripción:</strong> Una herramienta para crear presentaciones de sermones de manera sencilla y eficiente.</p>
               </section>
 

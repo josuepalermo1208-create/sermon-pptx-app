@@ -15,6 +15,12 @@ function SlidePreview({
   slideDesign = "classic",
   slideBackground = "#FFFFFF",
   hideHeader = false,
+  titleColor = "#000000",
+  headingColor = "#000000",
+  romanColorMode = "theme",
+  customRomanColor = "#000000",
+  markerColorMode = "theme",
+  customMarkerColor = "#000000",
 }) {
   const typography = {
     coverTitle: { fontFace: "Calibri", fontSize: 80 },
@@ -39,7 +45,6 @@ function SlidePreview({
       accent: "#2563EB",
       text: "#1D4ED8",
     },
-
     green: {
       dark: "#166534",
       accent: "#22C55E",
@@ -79,6 +84,16 @@ function SlidePreview({
     : colors;
   const textColor = getContrastText(slideBackground);
   const accentColor = getReadableColor(slideBackground, palette.text);
+  const romanColor = romanColorMode === "custom"
+    ? customRomanColor
+    : romanColorMode === "black"
+      ? "#000000"
+      : accentColor;
+  const markerColor = markerColorMode === "custom"
+    ? customMarkerColor
+    : markerColorMode === "black"
+      ? "#000000"
+      : accentColor;
   const mutedTextColor = getReadableColor(slideBackground, textColor === "#FFFFFF" ? "#E5E7EB" : "#666666");
 
   const isWidescreen =
@@ -110,7 +125,6 @@ function SlidePreview({
     backgroundColor: slideBackground,
     color: textColor,
   };
-
   return (
     <div
       className={`slide-preview slide-design-${slideDesign}`}
@@ -146,7 +160,8 @@ function SlidePreview({
             style={{
               fontFamily: typography.coverTitle.fontFace,
               fontSize: previewFontSize("coverTitle", 0.5),
-              color: textColor,
+              color: titleColor,
+              whiteSpace: "pre-line",
             }}
           >
             {title}
@@ -174,16 +189,14 @@ function SlidePreview({
                   style={{
                     fontFamily: typography.heading.fontFace,
                     fontSize: previewFontSize("heading", 0.55),
-                    color: textColor,
+                    color: headingColor,
                   }}
                 >
-
                   {roman && (
                     <span
                       className="roman"
                       style={{
-                        color:
-                          accentColor,
+                        color: romanColor,
                       }}
                     >
                       {roman}.
@@ -221,7 +234,7 @@ function SlidePreview({
                   <span
                     className="bullet"
                     style={{
-                      color: accentColor,
+                      color: markerColor,
                       fontFamily: typography.content.fontFace,
                       fontSize: previewFontSize("content", 0.56),
                     }}
@@ -232,7 +245,7 @@ function SlidePreview({
                   <span
                     className="number"
                     style={{
-                      color: accentColor,
+                      color: markerColor,
                       fontFamily: typography.content.fontFace,
                       fontSize: previewFontSize("content", 0.56),
                     }}
