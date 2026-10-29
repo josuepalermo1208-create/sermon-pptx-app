@@ -34,6 +34,12 @@ const DEFAULT_FONT_SETTINGS = {
   footer: { fontFace: "Calibri", fontSize: 14 },
 };
 
+const STANDARD_FONT_SETTINGS = {
+  ...DEFAULT_FONT_SETTINGS,
+  heading: { ...DEFAULT_FONT_SETTINGS.heading, fontSize: 44 },
+  content: { ...DEFAULT_FONT_SETTINGS.content, fontSize: 36 },
+};
+
 // Default limits for the number of points per section based on slide format
 const DEFAULT_SECTION_POINT_LIMITS = {
   widescreen: 5,
@@ -156,7 +162,9 @@ function App() {
   };
 
   const resetFontSettings = () => {
-    setFontSettings(DEFAULT_FONT_SETTINGS);
+    setFontSettings(
+      slideFormat === "standard" ? STANDARD_FONT_SETTINGS : DEFAULT_FONT_SETTINGS
+    );
   };
 
   const startPresentation = async () => {
@@ -708,7 +716,24 @@ function App() {
         <section className="panel control-panel">
           <h2 className="panel-title">Configuración</h2>
 
-          <div className="config-scroll">
+          <div
+            className="config-scroll"
+            onWheel={(event) => {
+              if (event.ctrlKey || event.metaKey) return;
+
+              const deltaMultiplier = event.deltaMode === 1
+                ? 12
+                : event.deltaMode === 2
+                  ? event.currentTarget.clientHeight
+                  : 0.45;
+
+              event.preventDefault();
+              event.currentTarget.scrollTop += event.deltaY * deltaMultiplier;
+            }}
+          >
+            <div className="config-section-heading">
+              <span>General</span>
+            </div>
             <div className="settings-card">
               <h3 className="card-title">
                 Nombre del archivo
@@ -742,6 +767,9 @@ function App() {
               />
             </div>
 
+            <div className="config-section-heading">
+              <span>Formato y contenido</span>
+            </div>
             <div className="settings-card">
               <h3 className="card-title">
                 Tamaño de diapositiva
@@ -754,6 +782,22 @@ function App() {
                   const nextFormat = event.target.value;
                   setSlideFormat(nextFormat);
                   setSectionPointLimit(DEFAULT_SECTION_POINT_LIMITS[nextFormat]);
+
+                  if (nextFormat === "standard") {
+                    setFontSettings(STANDARD_FONT_SETTINGS);
+                  } else {
+                    setFontSettings((current) => ({
+                      ...current,
+                      heading: {
+                        ...current.heading,
+                        fontSize: DEFAULT_FONT_SETTINGS.heading.fontSize,
+                      },
+                      content: {
+                        ...current.content,
+                        fontSize: DEFAULT_FONT_SETTINGS.content.fontSize,
+                      },
+                    }));
+                  }
                 }}
               >
                 <option value="standard">
@@ -838,6 +882,9 @@ function App() {
               </div>
             </div>
 
+            <div className="config-section-heading">
+              <span>Apariencia</span>
+            </div>
             <div className="settings-card design-card">
               <h3 className="card-title">Diseño de diapositiva</h3>
               <div className="design-grid">
@@ -1046,6 +1093,9 @@ function App() {
               </div>
             )}
 
+            <div className="config-section-heading">
+              <span>Colores del texto</span>
+            </div>
             <div className="settings-card title-color-card">
               <h3 className="card-title">Color del título</h3>
               <select
@@ -1150,6 +1200,9 @@ function App() {
               </div>
             </div>
 
+            <div className="config-section-heading">
+              <span>Fondo</span>
+            </div>
             <div className="settings-card slide-background-card">
               <h3 className="card-title">Fondo de diapositiva</h3>
               <div className="background-grid">
@@ -1178,6 +1231,9 @@ function App() {
               </div>
             </div>
 
+            <div className="config-section-heading">
+              <span>Tipografía</span>
+            </div>
             <div className="settings-card typography-card">
               <h3 className="card-title">Tipografía de diapositivas</h3>
               {[
@@ -1704,7 +1760,7 @@ I.TEXTO DEL ENCABEZADO`}</pre>
               <section className="manual-section">
                 <h3>Acerca de la aplicación</h3>
                 <p><strong>Nombre:</strong> Sermon Slider</p>
-                <p><strong>Versión:</strong> 2.1.2</p>
+                <p><strong>Versión:</strong> 2.1.3</p>
                 <p><strong>Descripción:</strong> Una herramienta para crear presentaciones de sermones de manera sencilla y eficiente.</p>
               </section>
 
