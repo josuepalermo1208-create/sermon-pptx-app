@@ -168,7 +168,6 @@ export function parseSermon(raw) {
       }
 
       if (line === "") {
-        currentListItem = null;
         continue;
       }
 
@@ -183,7 +182,7 @@ export function parseSermon(raw) {
         continue;
       }
 
-      const childMatch = line.match(/^([a-z])\)\s*(.+)$/i);
+      const childMatch = line.match(/^\(?([a-z])(?:\)|\.)\s*(.*)$/i);
       if (childMatch && currentListItem) {
         currentListItem.children.push({
           letter: childMatch[1].toLowerCase(),
@@ -206,7 +205,6 @@ export function parseSermon(raw) {
       mode === "section" &&
       line === ""
     ) {
-      currentItem = null;
       continue;
     }
 
@@ -249,7 +247,7 @@ export function parseSermon(raw) {
         continue;
       }
       const childMatch = line.match(
-        /^([a-z])\)\s*(.+)$/i
+        /^\(?([a-z])(?:\)|\.)\s*(.*)$/i
       );
       if (
         childMatch &&
@@ -287,7 +285,6 @@ export function parseSermon(raw) {
       }
 
       if (line === "") {
-        currentListItem = null;
         continue;
       }
 
@@ -302,7 +299,7 @@ export function parseSermon(raw) {
         continue;
       }
 
-      const childMatch = line.match(/^([a-z])\)\s*(.+)$/i);
+      const childMatch = line.match(/^\(?([a-z])(?:\)|\.)\s*(.*)$/i);
       if (childMatch && currentListItem) {
         currentListItem.children.push({
           letter: childMatch[1].toLowerCase(),

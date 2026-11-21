@@ -40,6 +40,12 @@ const STANDARD_FONT_SETTINGS = {
   content: { ...DEFAULT_FONT_SETTINGS.content, fontSize: 36 },
 };
 
+const AUTO_CLOSE_PAIRS = {
+  "[": "]",
+  "(": ")",
+  "{": "}",
+};
+
 // Default limits for the number of points per section based on slide format
 const DEFAULT_SECTION_POINT_LIMITS = {
   widescreen: 5,
@@ -100,10 +106,7 @@ function App() {
     const pendingCursor = pendingTextCursorRef.current;
     if (!pendingCursor) return;
 
-    pendingCursor.textarea.setSelectionRange(
-      pendingCursor.position,
-      pendingCursor.position
-    );
+    pendingCursor.textarea.setSelectionRange(pendingCursor.start, pendingCursor.end);
     pendingTextCursorRef.current = null;
   }, [inputText]);
 
@@ -134,21 +137,186 @@ function App() {
   const handleSermonTextChange = (event) => {
     const textarea = event.currentTarget;
     const value = textarea.value;
+    const closingCharacter = AUTO_CLOSE_PAIRS[event.nativeEvent.data];
 
-    if (event.nativeEvent.data !== "[") {
+    if (!closingCharacter) {
       setInputText(value);
       return;
     }
 
     const cursorPosition = textarea.selectionStart;
-    const valueWithClosingBracket =
-      `${value.slice(0, cursorPosition)}]${value.slice(cursorPosition)}`;
+    if (value[cursorPosition] === closingCharacter) {
+      pendingTextCursorRef.current = {
+        textarea,
+        start: cursorPosition,
+        end: cursorPosition,
+      };
+      setInputText(value);
+      return;
+    }
+
+    const valueWithClosingCharacter =
+      `${value.slice(0, cursorPosition)}${closingCharacter}${value.slice(cursorPosition)}`;
 
     pendingTextCursorRef.current = {
       textarea,
-      position: cursorPosition,
+      start: cursorPosition,
+      end: cursorPosition,
     };
-    setInputText(valueWithClosingBracket);
+    setInputText(valueWithClosingCharacter);
+  };
+
+  const handleSermonTextKeyDown = (event) => {
+    const textarea = event.currentTarget;
+    const { value, selectionStart, selectionEnd } = textarea;
+
+    if (
+      event.ctrlKey &&
+      event.shiftKey &&
+      !event.altKey &&
+      !event.metaKey &&
+      selectionStart !== selectionEnd
+    ) {
+      let delimiters;
+      if (
+        event.code === "Digit9" ||
+        event.code === "Numpad9" ||
+        event.key === "("
+      ) {
+        delimiters = ["(", ")"];
+      } else if (
+        event.code === "BracketLeft" ||
+        event.key === "[" ||
+        event.key === "{"
+      ) {
+        delimiters = ["[", "]"];
+      }
+
+      if (delimiters) {
+        event.preventDefault();
+        const selectedText = value.slice(selectionStart, selectionEnd);
+        const wrappedText =
+          delimiters[0] + selectedText + delimiters[1];
+        const updatedValue =
+          value.slice(0, selectionStart) +
+          wrappedText +
+          value.slice(selectionEnd);
+
+        pendingTextCursorRef.current = {
+          textarea,
+          start: selectionStart + 1,
+          end: selectionEnd + 1,
+        };
+        setInputText(updatedValue);
+        return;
+      }
+    }
+
+    const openingCharacter = Object.keys(AUTO_CLOSE_PAIRS).find(
+      (character) => AUTO_CLOSE_PAIRS[character] === event.key
+    );
+    if (
+      openingCharacter &&
+      selectionStart === selectionEnd &&
+      value[selectionStart] === event.key
+    ) {
+      event.preventDefault();
+      textarea.setSelectionRange(selectionStart + 1, selectionStart + 1);
+      return;
+    }
+
+    if (
+      (event.key === "Backspace" || event.key === "Delete") &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey
+    ) {
+      let openingIndex = -1;
+
+      if (selectionStart === selectionEnd) {
+        openingIndex = event.key === "Backspace"
+          ? selectionStart - 1
+          : selectionStart;
+      } else if (
+        selectionEnd === selectionStart + 1 &&
+        AUTO_CLOSE_PAIRS[value[selectionStart]] === value[selectionEnd]
+      ) {
+        openingIndex = selectionStart;
+      }
+
+      const openingCharacter = value[openingIndex];
+      if (
+        AUTO_CLOSE_PAIRS[openingCharacter] &&
+        value[openingIndex + 1] === AUTO_CLOSE_PAIRS[openingCharacter]
+      ) {
+        event.preventDefault();
+        const updatedValue =
+          value.slice(0, openingIndex) + value.slice(openingIndex + 2);
+        pendingTextCursorRef.current = {
+          textarea,
+          start: openingIndex,
+          end: openingIndex,
+        };
+        setInputText(updatedValue);
+        return;
+      }
+    }
+
+    if (
+      event.key !== "Tab" ||
+      event.shiftKey ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    ) {
+      return;
+    }
+
+    const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+    const nextLineBreak = value.indexOf("\n", selectionEnd);
+    const lineEnd = nextLineBreak === -1 ? value.length : nextLineBreak;
+
+    if (selectionEnd > lineEnd) return;
+
+    const currentLine = value.slice(lineStart, lineEnd);
+    if (/^[\t ]*\(?[a-z](?:\)|\.)\s*/i.test(currentLine)) return;
+
+    const previousLine = value
+      .slice(0, lineStart)
+      .split(/\r?\n/)
+      .reverse()
+      .map((line) => line.trim())
+      .find(Boolean);
+    if (!previousLine) return;
+
+    let letter;
+    if (/^\d+\.\s*.+$/.test(previousLine)) {
+      letter = "a";
+    } else {
+      const previousInciso = previousLine.match(/^\(?([a-z])(?:\)|\.)\s*.*$/i);
+      if (!previousInciso) return;
+
+      const nextLetterCode = previousInciso[1].toLowerCase().charCodeAt(0) + 1;
+      if (nextLetterCode > "z".charCodeAt(0)) return;
+      letter = String.fromCharCode(nextLetterCode);
+    }
+
+    event.preventDefault();
+
+    const indentationLength = currentLine.match(/^[\t ]*/)[0].length;
+    const incisoLine = `${letter}) ${currentLine.slice(indentationLength)}`;
+    const updatedValue =
+      value.slice(0, lineStart) + incisoLine + value.slice(lineEnd);
+    const selectionOffset = incisoLine.length - currentLine.length;
+    const nextSelectionStart = Math.max(lineStart, selectionStart + selectionOffset);
+    const nextSelectionEnd = Math.max(lineStart, selectionEnd + selectionOffset);
+
+    pendingTextCursorRef.current = {
+      textarea,
+      start: nextSelectionStart,
+      end: nextSelectionEnd,
+    };
+    setInputText(updatedValue);
   };
 
   const updateFontSetting = (type, property, value) => {
@@ -669,6 +837,7 @@ function App() {
               className="form-control textarea-control"
               value={inputText}
               onChange={handleSermonTextChange}
+              onKeyDown={handleSermonTextKeyDown}
               placeholder="Pega aquí el sermón..."
             />
           </div>
@@ -707,6 +876,7 @@ function App() {
               className="form-control textarea-control fullscreen-editor-textarea"
               value={inputText}
               onChange={handleSermonTextChange}
+              onKeyDown={handleSermonTextKeyDown}
               placeholder="Pega aquí el sermón..."
               autoFocus
             />
@@ -1654,6 +1824,7 @@ function App() {
                 <h3>2. Editar el sermón</h3>
                 <p>El botón de pantalla completa abre un editor amplio. Puedes borrar todo el texto, importar un `.txt` o exportar el texto actual para reutilizarlo.</p>
                 <p>La aplicación actualiza la vista previa automáticamente mientras escribes.</p>
+                <p>Selecciona un texto y pulsa <strong>Ctrl+Shift+9</strong> para encerrarlo entre paréntesis o <strong>Ctrl+Shift+[</strong> para encerrarlo entre corchetes. La selección se conserva dentro de los delimitadores en ambos editores.</p>
               </section>
 
               <section className="manual-section">
@@ -1661,7 +1832,7 @@ function App() {
                 <p>La primera línea en mayúsculas se toma como título. Puedes añadir una referencia después y usar [s] para dividir el título en varias líneas.</p>
                 <pre>{`TEMA DEL SERMÓN
 Juan 3:16`}</pre>
-                <p>En introducción y conclusión, usa guiones para crear viñetas. También puedes usar números e incisos.</p>
+                <p>En introducción y conclusión, usa guiones para crear viñetas y números para los puntos principales. Pulsa Tab en una línea debajo de un punto numerado para convertirla en inciso y continuar automáticamente con la siguiente letra.</p>
                 <pre>{`INTRODUCCIÓN
 - Primer punto
 - Segundo punto
@@ -1760,7 +1931,7 @@ I.TEXTO DEL ENCABEZADO`}</pre>
               <section className="manual-section">
                 <h3>Acerca de la aplicación</h3>
                 <p><strong>Nombre:</strong> Sermon Slider</p>
-                <p><strong>Versión:</strong> 2.1.3</p>
+                <p><strong>Versión:</strong> 2.1.4</p>
                 <p><strong>Descripción:</strong> Una herramienta para crear presentaciones de sermones de manera sencilla y eficiente.</p>
               </section>
 
