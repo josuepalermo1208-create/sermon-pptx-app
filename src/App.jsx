@@ -1932,7 +1932,7 @@ I.TEXTO DEL ENCABEZADO`}</pre>
               <section className="manual-section">
                 <h3>Acerca de la aplicación</h3>
                 <p><strong>Nombre:</strong> Sermon Slider</p>
-                <p><strong>Versión:</strong> 2.1.4</p>
+                <p><strong>Versión:</strong> 2.2.0</p>
                 <p><strong>Descripción:</strong> Una herramienta para crear presentaciones de sermones de manera sencilla y eficiente.</p>
               </section>
 
