@@ -760,7 +760,8 @@ function App() {
       <nav className="navbar">
 
         <div className="navbar-logo">
-          Sermon Slider
+          <img src="./sermon-slider.svg" alt="" aria-hidden="true" />
+          <span>Sermon Slider</span>
         </div>
 
         <div className="navbar-right" ref={menuRef}>

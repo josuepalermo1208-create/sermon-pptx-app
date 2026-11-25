@@ -130,9 +130,19 @@ input[type="text"] {
 }
 
 .navbar-logo {
+  align-items: center;
+  display: flex;
+  gap: 10px;
   font-size: 24px;
   font-weight: bold;
-  letter-spacing: 1px;
+  letter-spacing: 0;
+}
+
+.navbar-logo img {
+  display: block;
+  flex: 0 0 36px;
+  height: 36px;
+  width: 36px;
 }
 
 .navbar-right {
@@ -1039,22 +1049,13 @@ body.dark .navbar {
 }
 
 .navbar-logo {
+  align-items: center;
   color: var(--text);
+  display: flex;
   font-family: 'Manrope', sans-serif;
   font-size: 20px;
   font-weight: 800;
-  letter-spacing: -0.5px;
-}
-
-.navbar-logo::before {
-  background: var(--accent);
-  border-radius: 2px;
-  content: '';
-  display: inline-block;
-  height: 18px;
-  margin-right: 10px;
-  vertical-align: -3px;
-  width: 5px;
+  letter-spacing: 0;
 }
 
 .menu-btn {
